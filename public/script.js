@@ -327,10 +327,77 @@ async function showCompanyDetails(company) {
 
   // Load additional data
   loadCharges(company.company_number, detailsContent);
+  loadPSC(company.company_number, detailsContent);
   loadOfficers(company.company_number, detailsContent);
 
   document.getElementById('companyDetails').classList.remove('hidden');
   hideLoading();
+}
+
+// Load and display persons with significant control
+async function loadPSC(companyNumber, container) {
+  try {
+    const response = await fetch(`/api/company/${companyNumber}/psc`);
+    const data = await response.json();
+
+    let html = `
+      <div class="detail-section">
+        <h2>Persons with Significant Control</h2>
+    `;
+
+    const pscItems = data.items || [];
+
+    if (pscItems.length > 0) {
+      html += `<p style="margin-bottom: 15px;"><strong>Total: ${data.total_count || pscItems.length} PSC records</strong></p>`;
+      html += '<ul class="psc-list">';
+
+      pscItems.forEach((psc) => {
+        const name = psc.name || 'N/A';
+        const country = psc.country_of_residence || 'N/A';
+        const nationality = psc.nationality || 'N/A';
+        const natures = Array.isArray(psc.natures_of_control) ? psc.natures_of_control.join(', ') : (psc.natures_of_control || 'N/A');
+
+        const dob = psc.date_of_birth ? [
+          psc.date_of_birth.day,
+          psc.date_of_birth.month,
+          psc.date_of_birth.year
+        ].filter(Boolean).join('-') : 'N/A';
+
+        const address = psc.address ? [
+          psc.address.address_line_1,
+          psc.address.address_line_2,
+          psc.address.locality,
+          psc.address.region,
+          psc.address.postal_code,
+          psc.address.country
+        ].filter(Boolean).join(', ') : 'N/A';
+
+        const status = psc.ceased_on ? `Ceased on ${psc.ceased_on}` : (psc.notified_on ? `Notified on ${psc.notified_on}` : 'Active');
+
+        html += `
+          <li style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eee;">
+            <strong>${name}</strong><br>
+            <strong>Role:</strong> ${psc.kind || 'PSC'}<br>
+            <strong>Nature of control:</strong> ${natures}<br>
+            <strong>Nationality:</strong> ${nationality}<br>
+            <strong>Country of residence:</strong> ${country}<br>
+            <strong>Date of birth:</strong> ${dob}<br>
+            <strong>Address:</strong> ${address}<br>
+            <strong>Status:</strong> ${status}
+          </li>
+        `;
+      });
+
+      html += '</ul>';
+    } else {
+      html += '<div class="empty-message">No persons with significant control found</div>';
+    }
+
+    html += '</div>';
+    container.innerHTML += html;
+  } catch (error) {
+    console.error('Error loading PSC:', error);
+  }
 }
 
 // Load and display charges

@@ -165,6 +165,29 @@ app.get('/api/company/:companyNumber/officers', async (req, res) => {
   }
 });
 
+// Get company persons with significant control
+app.get('/api/company/:companyNumber/psc', async (req, res) => {
+  const { companyNumber } = req.params;
+
+  if (!companyNumber) {
+    return res.status(400).json({ error: 'Company number is required' });
+  }
+
+  try {
+    const response = await chApi.get(`/company/${companyNumber}/persons-with-significant-control`);
+    res.json({
+      total_count: response.data.total_count || 0,
+      items: response.data.items || []
+    });
+  } catch (error) {
+    console.error('PSC lookup error:', error.message);
+    res.status(error.response?.status || 500).json({
+      error: error.response?.data?.error || 'PSC lookup failed',
+      message: error.message
+    });
+  }
+});
+
 // Get company filings
 app.get('/api/company/:companyNumber/filings', async (req, res) => {
   const { companyNumber } = req.params;
