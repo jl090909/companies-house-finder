@@ -4,13 +4,28 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Load configuration
-const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
-const ENV = config.environment || 'sandbox';
-const API_KEY = config[ENV].api_key;
-const API_BASE_URL = config[ENV].base_url;
+// Load configuration from environment variables or config.json
+let ENV, API_KEY, API_BASE_URL;
+
+if (process.env.COMPANIES_HOUSE_API_KEY) {
+  // Production: Use environment variables
+  ENV = process.env.ENVIRONMENT || 'live';
+  API_KEY = process.env.COMPANIES_HOUSE_API_KEY;
+  API_BASE_URL = process.env.API_BASE_URL || 'https://api.company-information.service.gov.uk';
+} else {
+  // Development: Load from config.json
+  try {
+    const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+    ENV = config.environment || 'sandbox';
+    API_KEY = config[ENV].api_key;
+    API_BASE_URL = config[ENV].base_url;
+  } catch (error) {
+    console.error('ERROR: Cannot load configuration. Set COMPANIES_HOUSE_API_KEY environment variable for production or provide config.json for development.');
+    process.exit(1);
+  }
+}
 
 // Validate API key
 if (API_KEY === 'PASTE_YOUR_LIVE_API_KEY_HERE') {
