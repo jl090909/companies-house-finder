@@ -50,6 +50,23 @@
       <div id="error" class="error hidden"></div>
 
       <div id="results" class="results hidden">
+        <div class="results-toolbar">
+          <div class="sort-controls">
+            <label>Sort by:</label>
+            <button class="sort-btn" onclick="sortResults('name')">Name ↕</button>
+            <button class="sort-btn" onclick="sortResults('number')">Number ↕</button>
+            <button class="sort-btn" onclick="sortResults('status')">Status ↕</button>
+          </div>
+          <div class="filter-controls">
+            <label>Filter by Status:</label>
+            <div class="status-filters">
+              <label><input type="checkbox" value="active" onchange="applyFilters()"> Active</label>
+              <label><input type="checkbox" value="inactive" onchange="applyFilters()"> Inactive</label>
+              <label><input type="checkbox" value="dissolved" onchange="applyFilters()"> Dissolved</label>
+            </div>
+          </div>
+          <button class="reset-btn" onclick="resetSortFilter()">Reset</button>
+        </div>
         <div id="resultsList"></div>
       </div>
 

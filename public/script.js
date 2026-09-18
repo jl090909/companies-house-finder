@@ -1,4 +1,10 @@
 let currentCompanyNumber = null;
+let currentResults = []; // Store all current results for sorting/filtering
+let currentSortColumn = null;
+let currentSortAscending = true;
+let currentFilters = {
+  status: [] // Array of selected status values
+};
 
 // Search by company name
 async function searchByName() {
@@ -60,6 +66,22 @@ async function performSearch(endpoint) {
 
 // Display search results
 function displaySearchResults(companies, total) {
+  // Store results for sorting/filtering
+  currentResults = companies.map(c => ({
+    ...c,
+    statusCategory: categorizeStatus(c.company_status || 'Unknown')
+  }));
+  
+  // Reset sort and filters
+  currentSortColumn = null;
+  currentSortAscending = true;
+  currentFilters.status = [];
+  
+  // Clear filter checkboxes
+  document.querySelectorAll('.status-filters input[type="checkbox"]').forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
   if (companies.length === 0) {
     const resultsList = document.getElementById('resultsList');
     resultsList.innerHTML = '';
@@ -90,28 +112,73 @@ function displaySearchResults(companies, total) {
     return;
   }
 
+  // Render the results with toolbar
+  renderResults(total);
+  document.getElementById('results').classList.remove('hidden');
+}
+
+// Categorize status for filtering
+function categorizeStatus(status) {
+  if (!status) return 'unknown';
+  const lower = status.toLowerCase();
+  if (lower.includes('dissolved')) return 'dissolved';
+  if (lower.includes('inactive')) return 'inactive';
+  return 'active';
+}
+
+// Render results with current sort and filters applied
+function renderResults(total) {
+  let filtered = currentResults;
+  
+  // Apply filters
+  if (currentFilters.status.length > 0) {
+    filtered = filtered.filter(c => currentFilters.status.includes(c.statusCategory));
+  }
+  
+  // Apply sorting
+  if (currentSortColumn) {
+    filtered = filtered.sort((a, b) => {
+      let aVal = a[currentSortColumn];
+      let bVal = b[currentSortColumn];
+      
+      if (currentSortColumn === 'title') {
+        aVal = (aVal || '').toLowerCase();
+        bVal = (bVal || '').toLowerCase();
+      }
+      
+      if (aVal < bVal) return currentSortAscending ? -1 : 1;
+      if (aVal > bVal) return currentSortAscending ? 1 : -1;
+      return 0;
+    });
+  }
+
   const resultsList = document.getElementById('resultsList');
-  resultsList.innerHTML = '';
+  
+  // Find and keep the toolbar, remove only the company cards
+  let heading = resultsList.querySelector('div[style*="background: #f8f9ff"]');
+  if (heading && !heading.classList.contains('results-toolbar')) {
+    heading.remove();
+  }
+  
+  // Remove old company cards
+  resultsList.querySelectorAll('.company-card').forEach(card => card.remove());
+  
+  // Calculate total for display
+  const displayTotal = total || currentResults.length;
+  
+  const heading2 = document.createElement('div');
+  heading2.style.padding = '20px';
+  heading2.style.background = '#f8f9ff';
+  heading2.style.borderBottom = '1px solid #e0e0e0';
+  heading2.innerHTML = `<strong>Showing ${filtered.length} result${filtered.length !== 1 ? 's' : ''}</strong> ${displayTotal > currentResults.length && currentFilters.status.length === 0 ? `(of ${displayTotal} total)` : ''}`;
+  resultsList.appendChild(heading2);
 
-  const heading = document.createElement('div');
-  heading.style.padding = '20px';
-  heading.style.background = '#f8f9ff';
-  heading.style.borderBottom = '1px solid #e0e0e0';
-  heading.innerHTML = `<strong>Found ${companies.length} results</strong> ${total > companies.length ? `(showing first ${companies.length} of ${total})` : ''}`;
-  resultsList.appendChild(heading);
-
-  companies.forEach(company => {
+  filtered.forEach(company => {
     const card = document.createElement('div');
     card.className = 'company-card';
     
-    let status = company.company_status || 'Unknown';
-    let statusClass = 'active';
-    
-    if (status.toLowerCase().includes('dissolved')) {
-      statusClass = 'dissolved';
-    } else if (status.toLowerCase().includes('inactive')) {
-      statusClass = 'inactive';
-    }
+    const status = company.company_status || 'Unknown';
+    const statusClass = company.statusCategory;
 
     card.innerHTML = `
       <div class="company-name">${company.title}</div>
@@ -122,8 +189,52 @@ function displaySearchResults(companies, total) {
     card.onclick = () => viewCompanyDetails(company.company_number);
     resultsList.appendChild(card);
   });
+}
 
-  document.getElementById('results').classList.remove('hidden');
+// Sort results by column
+function sortResults(column) {
+  if (currentSortColumn === column) {
+    // Toggle ascending/descending
+    currentSortAscending = !currentSortAscending;
+  } else {
+    // New column, start with ascending
+    currentSortColumn = column;
+    currentSortAscending = true;
+  }
+  
+  // Update button active states
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  
+  renderResults();
+}
+
+// Apply filters
+function applyFilters() {
+  const checkboxes = document.querySelectorAll('.status-filters input[type="checkbox"]:checked');
+  currentFilters.status = Array.from(checkboxes).map(cb => cb.value);
+  renderResults();
+}
+
+// Reset sort and filters
+function resetSortFilter() {
+  currentSortColumn = null;
+  currentSortAscending = true;
+  currentFilters.status = [];
+  
+  // Clear all checkboxes
+  document.querySelectorAll('.status-filters input[type="checkbox"]').forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  // Clear active sort button
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  renderResults();
 }
 
 // View full company details
