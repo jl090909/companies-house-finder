@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Companies House Finder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Companies House Finder</h1>
+      <p class="subtitle">Search for UK companies by name or company number</p>
+    </header>
+
+    <main>
+      <div class="search-section">
+        <div class="search-container">
+          <div class="search-box">
+            <label for="companyName">Search by Company Name</label>
+            <input 
+              type="text" 
+              id="companyName" 
+              placeholder="Enter company name (e.g., Apple Ltd)" 
+              autocomplete="off"
+            >
+            <button onclick="searchByName()">Search Name</button>
+          </div>
+
+          <div class="divider">OR</div>
+
+          <div class="search-box">
+            <label for="companyNumber">Search by Company Number</label>
+            <input 
+              type="text" 
+              id="companyNumber" 
+              placeholder="Enter company number (e.g., 00000006)" 
+              autocomplete="off"
+            >
+            <button onclick="searchByNumber()">Search Number</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Loading company information...</p>
+      </div>
+
+      <div id="error" class="error hidden"></div>
+
+      <div id="results" class="results hidden">
+        <div id="resultsList"></div>
+      </div>
+
+      <div id="companyDetails" class="company-details hidden">
+        <button class="back-btn" onclick="goBack()">← Back to Results</button>
+        <div id="detailsContent"></div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Data sourced from Companies House API (Sandbox Environment)</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
